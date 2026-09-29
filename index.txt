@@ -1,0 +1,2093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Fatimah Maksumah Kamaruzzaman — Enchanted 3D Adventure & Portfolio</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Quicksand:wght@400;500;600;700&display=swap');
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #3b204e;
+      font-family: 'Quicksand', sans-serif;
+    }
+
+    .font-fairy {
+      font-family: 'Comfortaa', cursive;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(49, 23, 66, 0.4);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(236, 72, 153, 0.6);
+      border-radius: 9999px;
+    }
+
+    .ethereal-glass {
+      background: rgba(255, 245, 252, 0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1.5px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 16px 36px -10px rgba(168, 85, 247, 0.28), inset 0 1px 2px rgba(255, 255, 255, 0.95);
+    }
+
+    .fairy-reticle {
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgba(244, 114, 182, 0.85);
+      border-radius: 50%;
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .fairy-reticle.active {
+      transform: scale(2.2);
+      border-color: #f43f5e;
+      box-shadow: 0 0 18px rgba(244, 63, 94, 0.8);
+      background: rgba(251, 207, 232, 0.4);
+    }
+
+    @keyframes floatBob {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-7px); }
+    }
+    .animate-float-bob {
+      animation: floatBob 2.8s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="w-screen h-screen overflow-hidden text-slate-800 select-none">
+
+  <div id="game-container" class="relative w-full h-full">
+    <canvas id="webgl-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+    <!-- Center Reticle -->
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+      <div id="crosshair" class="fairy-reticle"></div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <header class="absolute top-4 left-0 right-0 px-4 md:px-7 flex justify-between items-center pointer-events-none z-30">
+      <!-- Left: Exploration status -->
+      <div class="flex items-center space-x-2 md:space-x-3 pointer-events-auto">
+        <div class="ethereal-glass px-3.5 py-2 rounded-full flex items-center space-x-2.5 shadow-md">
+          <span class="text-base animate-pulse">🌸</span>
+          <span class="font-fairy text-xs md:text-sm font-bold tracking-wide text-fuchsia-900 hidden sm:inline">FATIMAH'S GLADE</span>
+          <span id="discovery-badge" class="bg-fuchsia-100 text-fuchsia-800 border border-fuchsia-300 text-[11px] md:text-xs px-2.5 py-0.5 rounded-full font-bold">0 / 5 Discovered</span>
+        </div>
+
+        <button id="switch-to-standard-btn" class="ethereal-glass px-3 md:px-4 py-2 rounded-full hover:bg-white text-xs md:text-sm font-bold text-pink-700 hover:text-pink-900 transition shadow-md flex items-center space-x-1.5 border border-pink-300 group">
+          <svg class="w-4 h-4 text-pink-500 group-hover:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+          <span>Standard Portfolio</span>
+        </button>
+      </div>
+
+      <!-- Right: Sound & Profile Picture Badge -->
+      <div class="flex items-center space-x-2 md:space-x-3 pointer-events-auto">
+        <button id="toggle-audio-btn" class="ethereal-glass p-2.5 rounded-full hover:bg-white text-pink-600 transition shadow-md" title="Toggle Sound">
+          <svg id="audio-on-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+          <svg id="audio-off-icon" class="w-5 h-5 hidden text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
+        </button>
+
+        <div id="profile-badge-btn" class="ethereal-glass pl-2 pr-3 py-1.5 rounded-full flex items-center space-x-2.5 shadow-md cursor-pointer hover:bg-white transition border border-pink-200">
+          <div class="relative">
+            <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-pink-400 to-purple-400 flex items-center justify-center font-bold text-xs text-white shadow-sm border border-pink-300">FM</div>
+            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-white"></span>
+          </div>
+          <div class="hidden sm:flex flex-col text-left pr-1">
+            <span class="font-fairy text-xs font-bold text-fuchsia-950 leading-tight">Fatimah Maksumah</span>
+            <span class="text-[10px] text-pink-600 font-semibold leading-none">Immersive Media Designer</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Proximity Slash Prompt -->
+    <div id="interaction-prompt" class="absolute bottom-28 left-1/2 -translate-x-1/2 opacity-0 transition-all duration-300 pointer-events-none z-20 flex flex-col items-center">
+      <div class="animate-float-bob flex flex-col items-center">
+        <div class="px-5 py-2.5 ethereal-glass rounded-full border-pink-300 flex items-center space-x-2 text-pink-900 shadow-xl">
+          <span class="text-base">✨</span>
+          <span class="font-fairy font-bold text-xs md:text-sm tracking-wide">SLASH TO UNVEIL</span>
+          <span class="bg-pink-500 text-white font-bold text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">[LMB / TAP]</span>
+        </div>
+        <div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-pink-500 mt-1"></div>
+      </div>
+    </div>
+
+    <!-- Desktop Controls Helper -->
+    <div class="absolute bottom-6 left-6 hidden md:flex items-center space-x-2 pointer-events-none z-10">
+      <div class="ethereal-glass px-4 py-2 rounded-full text-xs space-x-3 text-pink-950 font-medium border border-pink-200 shadow-md">
+        <span><kbd class="px-1.5 py-0.5 rounded bg-pink-100 border border-pink-300 font-mono text-pink-900">WASD</kbd> Roam</span>
+        <span><kbd class="px-1.5 py-0.5 rounded bg-pink-100 border border-pink-300 font-mono text-pink-900">SHIFT</kbd> Run</span>
+        <span><kbd class="px-1.5 py-0.5 rounded bg-pink-100 border border-pink-300 font-mono text-pink-900">SPACE</kbd> Hop</span>
+        <span><kbd class="px-1.5 py-0.5 rounded bg-pink-100 border border-pink-300 font-mono text-pink-900">LMB</kbd> Slash (Chests & Critters!)</span>
+      </div>
+    </div>
+
+    <!-- Mobile Virtual Controls -->
+    <div id="mobile-controls" class="absolute inset-x-0 bottom-6 px-6 flex justify-between items-end pointer-events-none z-20 md:hidden">
+      <div id="joystick-zone" class="w-28 h-28 rounded-full ethereal-glass relative pointer-events-auto flex items-center justify-center border-2 border-pink-200">
+        <div id="joystick-knob" class="w-12 h-12 rounded-full bg-pink-500/80 border-2 border-white shadow-md transform translate-x-0 translate-y-0 transition-transform duration-75"></div>
+      </div>
+      <div class="flex flex-col space-y-3 pointer-events-auto">
+        <button id="mobile-jump-btn" class="w-14 h-14 rounded-full ethereal-glass border border-pink-300 flex items-center justify-center text-pink-700 active:scale-90 font-fairy font-bold text-xs shadow-md">
+          HOP
+        </button>
+        <button id="mobile-attack-btn" class="w-16 h-16 rounded-full bg-gradient-to-tr from-pink-500 to-rose-400 border-2 border-white flex items-center justify-center text-white text-2xl active:scale-90 shadow-lg shadow-pink-500/50">
+          ✨
+        </button>
+      </div>
+    </div>
+
+    <!-- 3D Project Discovery Modal -->
+    <div id="project-modal" class="fixed inset-y-0 right-0 w-full max-w-md pointer-events-none z-40 transform translate-x-full transition-transform duration-500 ease-out flex items-center p-4 md:p-6">
+      <div class="ethereal-glass w-full max-h-[90vh] overflow-y-auto rounded-3xl p-6 md:p-8 pointer-events-auto relative shadow-2xl flex flex-col border border-white">
+        <button id="close-modal-btn" class="absolute top-5 right-5 text-pink-400 hover:text-pink-700 p-2 rounded-full hover:bg-pink-100 transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+
+        <div class="flex items-center space-x-2 text-pink-600 text-xs font-bold tracking-wider uppercase mb-1">
+          <span id="project-category-badge">Category</span>
+          <span>✦</span>
+          <span id="project-year-badge">2025</span>
+        </div>
+
+        <h2 id="project-title" class="font-fairy text-2xl md:text-3xl font-bold text-pink-950 mb-2 leading-tight">Project Title</h2>
+
+        <div id="project-tags" class="flex flex-wrap gap-1.5 mb-4"></div>
+
+        <div id="project-visual-container" class="w-full h-44 rounded-2xl bg-gradient-to-br from-pink-100/90 to-purple-100/90 border border-pink-200 overflow-hidden mb-4 relative flex items-center justify-center group shadow-inner">
+          <div id="project-preview-icon" class="text-6xl transform group-hover:scale-110 transition duration-300">🌸</div>
+          <div class="absolute bottom-2 left-3 text-[10px] tracking-wider text-pink-700 font-fairy uppercase bg-white/80 px-2 py-0.5 rounded-full font-bold">Enchanted Artifact</div>
+        </div>
+
+        <p id="project-description" class="text-slate-700 text-sm md:text-base leading-relaxed mb-6 font-medium flex-grow">
+          Project description.
+        </p>
+
+        <div class="flex items-center space-x-3 pt-3 border-t border-pink-200">
+          <a id="project-demo-link" href="#" target="_blank" rel="noopener noreferrer" class="flex-1 py-3 px-4 rounded-full bg-gradient-to-r from-pink-500 via-rose-500 to-fuchsia-500 hover:opacity-90 text-white font-bold text-center text-sm tracking-wide transition shadow-md shadow-pink-400/40 flex items-center justify-center space-x-2">
+            <span>Explore Magic</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+          </a>
+          <a id="project-github-link" href="#" target="_blank" rel="noopener noreferrer" class="py-3 px-4 rounded-full ethereal-glass hover:bg-white text-pink-900 font-semibold text-sm transition flex items-center justify-center space-x-1.5 border border-pink-200">
+            <span>Behance</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Standard 2D Portfolio View Screen -->
+    <div id="standard-portfolio-view" class="fixed inset-0 z-50 bg-[#281335]/70 backdrop-blur-2xl overflow-y-auto hidden opacity-0 transition-opacity duration-400">
+      <div class="min-h-screen px-4 md:px-12 py-8 flex flex-col max-w-7xl mx-auto text-slate-800">
+        
+        <!-- Standard View Navigation Bar -->
+        <div class="flex justify-between items-center mb-10 pb-4 border-b border-pink-300/30">
+          <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-400 to-purple-400 flex items-center justify-center font-bold text-base text-white border-2 border-pink-400 shadow-md">
+              FM
+            </div>
+            <div>
+              <h2 class="font-fairy text-lg md:text-xl font-bold text-white leading-tight">Fatimah Maksumah Kamaruzzaman</h2>
+              <p class="text-xs md:text-sm text-pink-200">Immersive Media Designer • VR Design, 3D & Digital Storytelling</p>
+            </div>
+          </div>
+
+          <button id="back-to-game-btn" class="px-5 py-2.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-fairy font-bold text-xs md:text-sm tracking-wide shadow-lg shadow-pink-500/40 flex items-center space-x-2 transition hover:scale-105 active:scale-95">
+            <span>⚔️ Enter 3D Glade</span>
+          </button>
+        </div>
+
+        <!-- Hero Section -->
+        <div class="mb-10 text-center max-w-3xl mx-auto">
+          <span class="inline-block px-3.5 py-1 rounded-full bg-pink-500/20 text-pink-300 border border-pink-400/40 font-fairy text-xs font-semibold mb-3">Immersive Media Portfolio</span>
+          <h1 class="font-fairy text-3xl md:text-5xl font-black text-white mb-4 leading-tight">
+            Crafting Immersive Realities, 3D Worlds & Meaningful Stories
+          </h1>
+          <p class="text-pink-100 text-sm md:text-base leading-relaxed">
+            A multidisciplinary creative combining technical skill with visual artistry to craft immersive, user-centered experiences in VR, interactive 3D, and digital illustration.
+          </p>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex flex-wrap items-center justify-center gap-2 mb-8" id="category-filters">
+          <button class="filter-btn active px-4 py-2 rounded-full text-xs font-bold font-fairy bg-pink-500 text-white shadow-md transition" data-filter="all">All Projects</button>
+          <button class="filter-btn px-4 py-2 rounded-full text-xs font-bold font-fairy bg-white/20 text-pink-100 hover:bg-white/30 transition" data-filter="VR / Medical Experience">VR & Medical</button>
+          <button class="filter-btn px-4 py-2 rounded-full text-xs font-bold font-fairy bg-white/20 text-pink-100 hover:bg-white/30 transition" data-filter="Interactive & Community">Community & Esports</button>
+          <button class="filter-btn px-4 py-2 rounded-full text-xs font-bold font-fairy bg-white/20 text-pink-100 hover:bg-white/30 transition" data-filter="3D Virtual Environments">3D & Environments</button>
+          <button class="filter-btn px-4 py-2 rounded-full text-xs font-bold font-fairy bg-white/20 text-pink-100 hover:bg-white/30 transition" data-filter="Digital Art & Illustration">Illustration</button>
+        </div>
+
+        <!-- Projects Grid -->
+        <div id="standard-project-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+          <!-- Dynamically populated via JS -->
+        </div>
+
+        <!-- Experience, Education & Skills -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+          <!-- Work Experience -->
+          <div class="ethereal-glass rounded-3xl p-6 md:p-8 border border-pink-200">
+            <h4 class="font-fairy text-lg font-bold text-pink-900 mb-4 flex items-center gap-2">
+              <span>💼</span> Work Experience
+            </h4>
+            <div class="space-y-4 text-xs md:text-sm">
+              <div class="border-l-2 border-pink-400 pl-3">
+                <span class="font-bold text-pink-950 block">Freelance Digital Artist</span>
+                <span class="text-pink-600 text-[11px] font-semibold">2022 – Present</span>
+                <p class="text-slate-700 mt-1">Custom digital artwork, character designs, portraits, chibis, emotes, and merchandise with full commission pipeline management.</p>
+              </div>
+              <div class="border-l-2 border-pink-400 pl-3">
+                <span class="font-bold text-pink-950 block">VR Designer Creative Intern</span>
+                <span class="text-pink-600 text-[11px] font-semibold">Recove Group Sdn. Bhd. (Jul 2025 – Oct 2025)</span>
+                <p class="text-slate-700 mt-1">Developed interactive medical VR application in Unity and C# showcasing a non-invasive hemoglobin meter, including 3D environments and UI.</p>
+              </div>
+              <div class="border-l-2 border-pink-400 pl-3">
+                <span class="font-bold text-pink-950 block">Secretary & Finance</span>
+                <span class="text-pink-600 text-[11px] font-semibold">Little Warriors Charity Foundation (2024)</span>
+                <p class="text-slate-700 mt-1">Co-led "The Glimmer of Hope 2024 Project" for children with cancer; managed budgeting and documentation.</p>
+              </div>
+              <div class="border-l-2 border-pink-400 pl-3">
+                <span class="font-bold text-pink-950 block">Vice President</span>
+                <span class="text-pink-600 text-[11px] font-semibold">MMU Esports Club (2020 – 2022)</span>
+                <p class="text-slate-700 mt-1">Led tournaments, workshops, and community events fostering inclusive gaming engagement.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Education & Honors -->
+          <div class="ethereal-glass rounded-3xl p-6 md:p-8 border border-pink-200">
+            <h4 class="font-fairy text-lg font-bold text-pink-900 mb-4 flex items-center gap-2">
+              <span>🎓</span> Education & Honors
+            </h4>
+            <div class="space-y-4 text-xs md:text-sm">
+              <div class="border-l-2 border-purple-400 pl-3">
+                <span class="font-bold text-pink-950 block">Bachelor of Multimedia (Virtual Reality) Hons.</span>
+                <span class="text-pink-600 text-[11px] font-semibold">Multimedia University, Cyberjaya (2021 – 2025)</span>
+                <p class="text-slate-700 mt-1">Specialized in VR interactive pipelines, spatial design, and 3D development.</p>
+              </div>
+              <div class="border-l-2 border-purple-400 pl-3">
+                <span class="font-bold text-pink-950 block">Foundation in Creative Multimedia</span>
+                <span class="text-pink-600 text-[11px] font-semibold">Multimedia University, Cyberjaya (2019 – 2020)</span>
+              </div>
+              <div class="pt-2">
+                <span class="font-fairy font-bold text-xs text-pink-900 block mb-2">Awards & Certifications</span>
+                <ul class="space-y-1.5 text-slate-700 text-xs">
+                  <li class="flex items-center gap-1.5"><span class="text-pink-500">🏆</span> The Dean's Award Achiever (Tri 1 2024 & Tri 2 2024/2025)</li>
+                  <li class="flex items-center gap-1.5"><span class="text-pink-500">📜</span> Internship Certificate of Acknowledgement (Oct 2025)</li>
+                  <li class="flex items-center gap-1.5"><span class="text-pink-500">🎗️</span> NCSM Certificate of Appreciation (June 2024)</li>
+                  <li class="flex items-center gap-1.5"><span class="text-pink-500">🌐</span> IELTS Band 8 (Fluent English)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Software & Toolset -->
+          <div class="ethereal-glass rounded-3xl p-6 md:p-8 border border-pink-200 flex flex-col justify-between">
+            <div>
+              <h4 class="font-fairy text-lg font-bold text-pink-900 mb-4 flex items-center gap-2">
+                <span>🛠️</span> Skills & Toolkit
+              </h4>
+              <div class="space-y-3">
+                <div>
+                  <span class="text-[11px] font-bold text-pink-700 uppercase tracking-wider block mb-1.5 font-fairy">3D & Game Engines</span>
+                  <div class="flex flex-wrap gap-1.5">
+                    <span class="px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-pink-950 border border-pink-200">Unity</span>
+                    <span class="px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-pink-950 border border-pink-200">C#</span>
+                    <span class="px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-pink-950 border border-pink-200">Autodesk Maya</span>
+                    <span class="px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-pink-950 border border-pink-200">Blender</span>
+                    <span class="px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-pink-950 border border-pink-200">Substance Painter</span>
+                  </div>
+                </div>
+                <div>
+                  <span class="text-[11px] font-bold text-pink-700 uppercase tracking-wider block mb-1.5 font-fairy">Design & Creative</span>
+                  <div class="flex flex-wrap gap-1.5">
+                    <span class="px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-pink-950 border border-pink-200">Photoshop</span>
+                    <span class="px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-pink-950 border border-pink-200">Illustrator</span>
+                    <span class="px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-pink-950 border border-pink-200">Procreate</span>
+                    <span class="px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-pink-950 border border-pink-200">Premiere Pro</span>
+                  </div>
+                </div>
+                <div>
+                  <span class="text-[11px] font-bold text-pink-700 uppercase tracking-wider block mb-1.5 font-fairy">Soft Skills</span>
+                  <div class="flex flex-wrap gap-1.5">
+                    <span class="px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-pink-950 border border-pink-200">Aesthetic Sensibility</span>
+                    <span class="px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-pink-950 border border-pink-200">Adaptability</span>
+                    <span class="px-2.5 py-1 bg-white rounded-full text-xs font-semibold text-pink-950 border border-pink-200">Leadership</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="pt-4 border-t border-pink-200 flex items-center justify-between mt-4">
+              <span class="text-xs text-pink-900 font-semibold">📍 Bangi, Selangor</span>
+              <a href="mailto:ima.kamaroz@gmail.com" class="text-xs font-bold text-pink-700 hover:text-pink-900 underline">ima.kamaroz@gmail.com</a>
+            </div>
+          </div>
+        </div>
+
+        <footer class="text-center text-xs text-pink-200/80 pb-6">
+          © 2026 Fatimah Maksumah Kamaruzzaman • Immersive Media Designer • Built with Three.js & Tailwind CSS
+        </footer>
+      </div>
+    </div>
+
+    <!-- Welcome Modal -->
+    <div id="intro-screen" class="fixed inset-0 bg-[#240e32]/65 backdrop-blur-md flex items-center justify-center p-6 z-50 transition-opacity duration-700">
+      <div class="ethereal-glass max-w-lg w-full p-8 md:p-10 rounded-3xl text-center relative shadow-2xl border border-pink-200">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-pink-100 border border-pink-300 flex items-center justify-center text-3xl animate-bounce">
+          🌸
+        </div>
+        <h1 class="font-fairy text-2xl md:text-3xl font-black text-pink-950 mb-2">
+          THE ENCHANTED GLADE
+        </h1>
+        <p class="text-pink-600 font-fairy text-xs tracking-widest uppercase mb-5 font-bold">Fatimah Maksumah • Interactive 3D Portfolio</p>
+
+        <p class="text-slate-700 text-sm md:text-base mb-6 leading-relaxed">
+          Stroll through the pastel twilight meadow filled with wild flowers, hopping bunnies, and gentle critters. <span class="text-pink-700 font-bold">Slash chests to reveal projects</span> or smack playful frogs and bunnies for confetti surprises!
+        </p>
+
+        <div class="grid grid-cols-2 gap-3 mb-6">
+          <button id="start-adventure-btn" class="py-3.5 px-4 rounded-full bg-gradient-to-r from-pink-500 via-rose-500 to-fuchsia-500 hover:opacity-90 text-white font-fairy font-bold tracking-wider text-xs md:text-sm uppercase transition shadow-lg shadow-pink-400/40">
+            ⚔️ Play 3D World
+          </button>
+          <button id="intro-standard-btn" class="py-3.5 px-4 rounded-full bg-white/80 hover:bg-white text-pink-800 font-fairy font-bold tracking-wider text-xs md:text-sm uppercase transition border border-pink-300 shadow">
+            📄 Standard View
+          </button>
+        </div>
+
+        <div class="flex items-center justify-center space-x-4 text-xs text-pink-800 font-medium">
+          <span>🐰 Smackable Bunnies</span>
+          <span>🐸 Smackable Frogs</span>
+          <span>🌺 Confetti Pops</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    class DreamSoundSynth {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+        this.droneOsc1 = null;
+        this.droneOsc2 = null;
+        this.droneGain = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+            this.startPastelDrone();
+          }
+        } else if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      startPastelDrone() {
+        if (!this.ctx || this.droneGain) return;
+        try {
+          this.droneGain = this.ctx.createGain();
+          this.droneGain.gain.setValueAtTime(0.015, this.ctx.currentTime);
+          this.droneGain.connect(this.ctx.destination);
+
+          this.droneOsc1 = this.ctx.createOscillator();
+          this.droneOsc1.type = 'sine';
+          this.droneOsc1.frequency.setValueAtTime(174.61, this.ctx.currentTime);
+          this.droneOsc1.connect(this.droneGain);
+          this.droneOsc1.start();
+
+          this.droneOsc2 = this.ctx.createOscillator();
+          this.droneOsc2.type = 'triangle';
+          this.droneOsc2.frequency.setValueAtTime(261.63, this.ctx.currentTime);
+          this.droneOsc2.connect(this.droneGain);
+          this.droneOsc2.start();
+        } catch (e) {
+          console.warn("Audio drone err:", e);
+        }
+      }
+
+      playSlash() {
+        if (!this.enabled || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(1320, now + 0.08);
+        osc.frequency.exponentialRampToValueAtTime(440, now + 0.2);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.21);
+      }
+
+      playSparkleImpact() {
+        if (!this.enabled || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        [587.33, 739.99, 880, 1174.66].forEach((f, idx) => {
+          const t = now + idx * 0.035;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, t);
+
+          gain.gain.setValueAtTime(0.22, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.36);
+        });
+      }
+
+      playConfettiPop() {
+        if (!this.enabled || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(750, now);
+        osc.frequency.exponentialRampToValueAtTime(1700, now + 0.12);
+        gain.gain.setValueAtTime(0.32, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.19);
+      }
+
+      playRevealHarp() {
+        if (!this.enabled || !this.ctx) return;
+        const notes = [440, 523.25, 659.25, 783.99, 880, 1046.5];
+        notes.forEach((freq, idx) => {
+          const t = this.ctx.currentTime + idx * 0.07;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, t);
+
+          gain.gain.setValueAtTime(0.001, t);
+          gain.gain.linearRampToValueAtTime(0.18, t + 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.85);
+        });
+      }
+
+      playRabbitHop() {
+        if (!this.enabled || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.09);
+        gain.gain.setValueAtTime(0.035, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      }
+
+      toggle() {
+        this.enabled = !this.enabled;
+        if (this.droneGain) {
+          this.droneGain.gain.setValueAtTime(this.enabled ? 0.015 : 0, this.ctx.currentTime);
+        }
+        return this.enabled;
+      }
+    }
+
+    const sound = new DreamSoundSynth();
+
+    const PORTFOLIO_PROJECTS = [
+      {
+        id: 'recove-vr',
+        title: 'Non-Invasive Hemoglobin Meter VR',
+        category: 'VR / Medical Experience',
+        year: '2025',
+        tools: ['Unity', 'C#', 'Substance Painter', 'Blender', 'Meta Quest'],
+        description: 'Developed during internship at Recove Group. An immersive medical VR application showcasing a non-invasive hemoglobin meter with high-fidelity clinic 3D environments, interactive medical sensors, and spatial UI[cite: 3].',
+        demoUrl: 'https://www.behance.net/fatimahkamaruz2',
+        githubUrl: 'https://www.behance.net/fatimahkamaruz2',
+        type: 'chest_pastel',
+        iconType: 'vr',
+        color: 0xf472b6,
+        position: { x: -14, z: -10 },
+        zone: 'Medical VR Glade',
+        thumbnail: 'https://images.unsplash.com/photo-1622979135225-d2ba269bc1df?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        id: 'mediu-tour',
+        title: 'MEDIU 3D Virtual Tour',
+        category: '3D Virtual Environments',
+        year: '2024',
+        tools: ['Autodesk Maya', 'Unity', 'Meta Quest 3'],
+        description: 'An interactive 3D virtual tour created to represent the MEDIU campus in an immersive spatial environment with real-time walking mechanics, optimized geometry, and baked illumination.',
+        demoUrl: 'https://www.behance.net/fatimahkamaruz2',
+        githubUrl: 'https://www.behance.net/fatimahkamaruz2',
+        type: 'gift_box',
+        iconType: 'crystal',
+        color: 0xa855f7,
+        position: { x: -13, z: 13 },
+        zone: 'Campus 3D Sanctum',
+        thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        id: 'freelance-art',
+        title: 'Digital Character & Illustration Commissions',
+        category: 'Digital Art & Illustration',
+        year: '2022 - Present',
+        tools: ['Procreate', 'Photoshop', 'Substance Painter', 'Canva'],
+        description: 'Custom character designs, portraits, chibis, emotes, and merchandise[cite: 3]. Managing full commission pipelines from concept, client communication, to high-resolution deliveries[cite: 3].',
+        demoUrl: 'https://www.behance.net/fatimahkamaruz2',
+        githubUrl: 'https://www.behance.net/fatimahkamaruz2',
+        type: 'barrel_moss',
+        iconType: 'scroll',
+        color: 0x10b981,
+        position: { x: 14, z: -12 },
+        zone: 'Illustration Studio',
+        thumbnail: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        id: 'esports-charity',
+        title: 'Interactive Community & Esports Campaigns',
+        category: 'Interactive & Community',
+        year: '2020 - 2024',
+        tools: ['Community Leadership', 'Visual Studio Code', 'Adobe Premiere Pro'],
+        description: 'Leadership and interactive event design for MMU Esports Club (Vice President) and Little Warriors Charity Foundation ("The Glimmer of Hope 2024" for children with cancer)[cite: 3].',
+        demoUrl: 'https://www.behance.net/fatimahkamaruz2',
+        githubUrl: 'https://www.behance.net/fatimahkamaruz2',
+        type: 'star_relic',
+        iconType: 'controller',
+        color: 0xec4899,
+        position: { x: 15, z: 12 },
+        zone: 'Esports Arena',
+        thumbnail: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        id: 'about-me',
+        title: 'Fatimah Maksumah Shrine',
+        category: 'About Me & Studio',
+        year: 'Present',
+        tools: ['VR Designer', '3D Specialist', 'Digital Storyteller'],
+        description: 'Final-year Bachelor of Multimedia (Virtual Reality) Hons student at MMU Cyberjaya and Dean\'s Award achiever[cite: 3]. Crafting immersive, user-centered spatial experiences[cite: 3].',
+        demoUrl: 'mailto:ima.kamaroz@gmail.com',
+        githubUrl: 'https://www.behance.net/fatimahkamaruz2',
+        type: 'fairy_shrine',
+        iconType: 'tesseract',
+        color: 0xf59e0b,
+        position: { x: 0, z: -20 },
+        zone: 'Fairy Gazebo',
+        thumbnail: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80'
+      }
+    ];
+
+    const canvas = document.getElementById('webgl-canvas');
+    const scene = new THREE.Scene();
+    
+    scene.background = new THREE.Color(0xd6a8e8); 
+    scene.fog = new THREE.FogExp2(0xcf9ade, 0.022);
+
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      antialias: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+
+    const ambientLight = new THREE.AmbientLight(0xd9b3e6, 0.75);
+    scene.add(ambientLight);
+
+    const sunLight = new THREE.DirectionalLight(0xffecd2, 1.05);
+    sunLight.position.set(28, 40, 24);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 5;
+    sunLight.shadow.camera.far = 110;
+    const shadowBound = 38;
+    sunLight.shadow.camera.left = -shadowBound;
+    sunLight.shadow.camera.right = shadowBound;
+    sunLight.shadow.camera.top = shadowBound;
+    sunLight.shadow.camera.bottom = -shadowBound;
+    sunLight.shadow.bias = -0.0004;
+    scene.add(sunLight);
+
+    const hemisphereLight = new THREE.HemisphereLight(0xeca8d8, 0x4fa679, 0.6);
+    scene.add(hemisphereLight);
+
+    const WORLD_SIZE = 76;
+    const terrainGeo = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE, 48, 48);
+    terrainGeo.rotateX(-Math.PI / 2);
+
+    const pos = terrainGeo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const z = pos.getZ(i);
+      const d = Math.hypot(x, z);
+
+      let y = Math.sin(x * 0.12) * Math.cos(z * 0.12) * 0.9;
+      y += Math.sin(x * 0.05 + z * 0.06) * 1.3;
+
+      if (d < 8) y *= (d / 8);
+      if (d > 26) {
+        const factor = (d - 26) / 10;
+        y += factor * factor * 1.8;
+      }
+      pos.setY(i, y);
+    }
+    terrainGeo.computeVertexNormals();
+
+    // Saturated Light Green Grass #95bb72
+    const terrainMat = new THREE.MeshStandardMaterial({
+      color: 0x95bb72,
+      roughness: 0.85,
+      metalness: 0.02,
+      flatShading: true
+    });
+    const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
+    terrainMesh.receiveShadow = true;
+    scene.add(terrainMesh);
+
+    function getTerrainHeight(x, z) {
+      const d = Math.hypot(x, z);
+      let y = Math.sin(x * 0.12) * Math.cos(z * 0.12) * 0.9;
+      y += Math.sin(x * 0.05 + z * 0.06) * 1.3;
+      if (d < 8) y *= (d / 8);
+      if (d > 26) {
+        const factor = (d - 26) / 10;
+        y += factor * factor * 1.8;
+      }
+      return y;
+    }
+
+    const flowerColors = [
+      0xf43f5e, 0xec4899, 0x8b5cf6, 0x38bdf8, 0xfbbf24, 0xf97316, 0xffffff
+    ];
+
+    const flowerGeo = new THREE.DodecahedronGeometry(0.16, 0);
+    const stemGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.35, 4);
+    const stemMat = new THREE.MeshStandardMaterial({ color: 0x2e7d4a, roughness: 0.9 });
+
+    function createFlowerPatch(centerX, centerZ, count = 12, radius = 2.2) {
+      const patch = new THREE.Group();
+      for (let i = 0; i < count; i++) {
+        const r = Math.random() * radius;
+        const theta = Math.random() * Math.PI * 2;
+        const fx = centerX + Math.cos(theta) * r;
+        const fz = centerZ + Math.sin(theta) * r;
+        const fy = getTerrainHeight(fx, fz);
+
+        const flower = new THREE.Group();
+        flower.position.set(fx, fy, fz);
+
+        const stem = new THREE.Mesh(stemGeo, stemMat);
+        stem.position.y = 0.15;
+        flower.add(stem);
+
+        const color = flowerColors[Math.floor(Math.random() * flowerColors.length)];
+        const blossomMat = new THREE.MeshStandardMaterial({
+          color: color,
+          roughness: 0.5,
+          emissive: color,
+          emissiveIntensity: 0.18,
+          flatShading: true
+        });
+        const blossom = new THREE.Mesh(flowerGeo, blossomMat);
+        blossom.position.y = 0.32;
+        blossom.scale.set(1.2, 0.8, 1.2);
+        blossom.rotation.y = Math.random() * Math.PI;
+        flower.add(blossom);
+
+        patch.add(flower);
+      }
+      return patch;
+    }
+
+    const floraMeadow = new THREE.Group();
+    for (let p = 0; p < 28; p++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 5 + Math.random() * 22;
+      floraMeadow.add(createFlowerPatch(Math.cos(angle) * dist, Math.sin(angle) * dist, 8 + Math.floor(Math.random() * 8)));
+    }
+    scene.add(floraMeadow);
+
+    function buildPastelPath(fromX, fromZ, toX, toZ, segments = 12) {
+      const group = new THREE.Group();
+      const stoneGeo = new THREE.CylinderGeometry(0.55, 0.7, 0.12, 6);
+      const stoneMat = new THREE.MeshStandardMaterial({ color: 0xf5d0fe, roughness: 0.7, flatShading: true });
+
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const curveOffset = Math.sin(t * Math.PI) * (Math.random() * 1.4 - 0.7);
+        const px = THREE.MathUtils.lerp(fromX, toX, t) + curveOffset;
+        const pz = THREE.MathUtils.lerp(fromZ, toZ, t);
+        const py = getTerrainHeight(px, pz) + 0.03;
+
+        const stone = new THREE.Mesh(stoneGeo, stoneMat);
+        stone.position.set(px, py, pz);
+        stone.rotation.y = Math.random() * Math.PI;
+        stone.scale.set(0.8 + Math.random() * 0.35, 1, 0.8 + Math.random() * 0.4);
+        stone.receiveShadow = true;
+        group.add(stone);
+      }
+      scene.add(group);
+    }
+
+    PORTFOLIO_PROJECTS.forEach(proj => {
+      buildPastelPath(0, 0, proj.position.x, proj.position.z, 10);
+    });
+
+    const centralHaven = new THREE.Group();
+    centralHaven.position.set(0, getTerrainHeight(0, 0), 0);
+
+    const sanctuaryRing = new THREE.Mesh(
+      new THREE.CylinderGeometry(3.6, 4.2, 0.4, 12),
+      new THREE.MeshStandardMaterial({ color: 0xfce7f3, roughness: 0.7, flatShading: true })
+    );
+    sanctuaryRing.position.y = 0.2;
+    sanctuaryRing.receiveShadow = true;
+    centralHaven.add(sanctuaryRing);
+
+    const heartGeo = new THREE.DodecahedronGeometry(1.4, 0);
+    const heartMat = new THREE.MeshStandardMaterial({
+      color: 0xec4899,
+      emissive: 0xbe185d,
+      emissiveIntensity: 0.5,
+      roughness: 0.15,
+      metalness: 0.3,
+      flatShading: true
+    });
+    const centralHeart = new THREE.Mesh(heartGeo, heartMat);
+    centralHeart.position.y = 3.6;
+    centralHeart.castShadow = true;
+    centralHaven.add(centralHeart);
+
+    const centralLight = new THREE.PointLight(0xf43f5e, 2.8, 22);
+    centralLight.position.y = 3.6;
+    centralHaven.add(centralLight);
+
+    const orbitRing = new THREE.Mesh(
+      new THREE.TorusGeometry(2.3, 0.07, 8, 24),
+      new THREE.MeshStandardMaterial({ color: 0xf472b6, emissive: 0xec4899, emissiveIntensity: 0.4 })
+    );
+    orbitRing.rotation.x = Math.PI / 3;
+    orbitRing.position.y = 3.6;
+    centralHaven.add(orbitRing);
+    scene.add(centralHaven);
+
+    function createFluffyPinkTree(x, z, scale = 1) {
+      const tree = new THREE.Group();
+      const y = getTerrainHeight(x, z);
+      tree.position.set(x, y, z);
+      tree.scale.set(scale, scale, scale);
+
+      const trunkMat = new THREE.MeshStandardMaterial({ color: 0xfdf2f8, roughness: 0.9, flatShading: true });
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.38, 2.8, 6), trunkMat);
+      trunk.position.y = 1.4;
+      trunk.castShadow = true;
+      trunk.receiveShadow = true;
+      tree.add(trunk);
+
+      const pinkHues = [0xec4899, 0xf472b6, 0xd946ef, 0xfb7185];
+      const clusterCount = 5;
+      for (let i = 0; i < clusterCount; i++) {
+        const folColor = pinkHues[Math.floor(Math.random() * pinkHues.length)];
+        const folMat = new THREE.MeshStandardMaterial({
+          color: folColor,
+          roughness: 0.8,
+          flatShading: true
+        });
+        const puffSize = 1.0 + Math.random() * 0.6;
+        const puff = new THREE.Mesh(new THREE.DodecahedronGeometry(puffSize, 1), folMat);
+        puff.position.set(
+          (Math.random() - 0.5) * 1.3,
+          2.6 + Math.random() * 1.5,
+          (Math.random() - 0.5) * 1.3
+        );
+        puff.castShadow = true;
+        tree.add(puff);
+      }
+
+      const lantern = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.22, 0),
+        new THREE.MeshStandardMaterial({ color: 0xfde047, emissive: 0xeab308, emissiveIntensity: 0.8 })
+      );
+      lantern.position.set(0.65, 2.2, 0.4);
+      tree.add(lantern);
+
+      return tree;
+    }
+
+    const treeContainer = new THREE.Group();
+    for (let i = 0; i < 52; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 11 + Math.random() * 26;
+      const tx = Math.cos(angle) * dist;
+      const tz = Math.sin(angle) * dist;
+
+      let safe = true;
+      for (const p of PORTFOLIO_PROJECTS) {
+        if (Math.hypot(tx - p.position.x, tz - p.position.z) < 4.5) {
+          safe = false;
+          break;
+        }
+      }
+      if (safe) {
+        treeContainer.add(createFluffyPinkTree(tx, tz, 0.85 + Math.random() * 0.45));
+      }
+    }
+    scene.add(treeContainer);
+
+    function createMushroom(x, z, scale = 1, capColor = 0xec4899) {
+      const shroom = new THREE.Group();
+      const y = getTerrainHeight(x, z);
+      shroom.position.set(x, y, z);
+      shroom.scale.set(scale, scale, scale);
+
+      const stem = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.22, 1.2, 6),
+        new THREE.MeshStandardMaterial({ color: 0xfff1f2, roughness: 0.9, flatShading: true })
+      );
+      stem.position.y = 0.6;
+      stem.castShadow = true;
+      shroom.add(stem);
+
+      const cap = new THREE.Mesh(
+        new THREE.SphereGeometry(0.7, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.5),
+        new THREE.MeshStandardMaterial({ color: capColor, roughness: 0.5, flatShading: true, emissive: capColor, emissiveIntensity: 0.35 })
+      );
+      cap.position.y = 1.2;
+      cap.castShadow = true;
+      shroom.add(cap);
+
+      return shroom;
+    }
+
+    const shroomColors = [0xec4899, 0xa855f7, 0x0ea5e9, 0xf59e0b];
+    for (let m = 0; m < 22; m++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 6 + Math.random() * 24;
+      const sx = Math.cos(angle) * r;
+      const sz = Math.sin(angle) * r;
+      const col = shroomColors[Math.floor(Math.random() * shroomColors.length)];
+      scene.add(createMushroom(sx, sz, 0.6 + Math.random() * 0.6, col));
+    }
+
+    const petalCount = 80;
+    const petalGeo = new THREE.BufferGeometry();
+    const petalPositions = new Float32Array(petalCount * 3);
+    const petalVelocities = [];
+
+    for (let p = 0; p < petalCount; p++) {
+      petalPositions[p * 3] = (Math.random() - 0.5) * 60;
+      petalPositions[p * 3 + 1] = 2 + Math.random() * 12;
+      petalPositions[p * 3 + 2] = (Math.random() - 0.5) * 60;
+      petalVelocities.push({
+        x: (Math.random() - 0.5) * 0.6,
+        y: -0.4 - Math.random() * 0.4,
+        z: (Math.random() - 0.5) * 0.6,
+        rot: Math.random() * Math.PI
+      });
+    }
+    petalGeo.setAttribute('position', new THREE.BufferAttribute(petalPositions, 3));
+    const petalMat = new THREE.PointsMaterial({
+      color: 0xf472b6,
+      size: 0.45,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending
+    });
+    const petalSystem = new THREE.Points(petalGeo, petalMat);
+    scene.add(petalSystem);
+
+    const butterflies = [];
+    const butterflyColors = [0xf43f5e, 0xa855f7, 0x0284c7, 0xf59e0b];
+
+    function createButterfly(color) {
+      const bGroup = new THREE.Group();
+      const wingGeo = new THREE.BufferGeometry();
+      const wingVerts = new Float32Array([
+        0, 0, 0,
+        0.35, 0.35, 0,
+        0.35, -0.2, 0
+      ]);
+      wingGeo.setAttribute('position', new THREE.BufferAttribute(wingVerts, 3));
+      wingGeo.computeVertexNormals();
+
+      const wingMat = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide });
+      const leftWing = new THREE.Mesh(wingGeo, wingMat);
+      const rightWing = new THREE.Mesh(wingGeo, wingMat);
+      rightWing.scale.x = -1;
+      bGroup.add(leftWing, rightWing);
+
+      const bLight = new THREE.PointLight(color, 0.7, 4);
+      bGroup.add(bLight);
+
+      return {
+        group: bGroup,
+        leftWing: leftWing,
+        rightWing: rightWing,
+        center: new THREE.Vector3((Math.random() - 0.5) * 30, 2 + Math.random() * 2, (Math.random() - 0.5) * 30),
+        angle: Math.random() * Math.PI * 2,
+        speed: 0.8 + Math.random() * 0.6,
+        wingPhase: Math.random() * Math.PI
+      };
+    }
+
+    for (let b = 0; b < 10; b++) {
+      const bf = createButterfly(butterflyColors[b % butterflyColors.length]);
+      scene.add(bf.group);
+      butterflies.push(bf);
+    }
+
+    // Smackable Bunnies & Frogs with Confetti Mechanics
+    const smackableCreatures = [];
+    const confettiParticles = [];
+
+    const confettiPalette = [0xf43f5e, 0x10b981, 0xfbbf24, 0x38bdf8, 0xa855f7, 0xffffff, 0xf97316];
+    function triggerCritterConfetti(pos) {
+      sound.playConfettiPop();
+      const count = 38;
+      for (let i = 0; i < count; i++) {
+        const cGeo = new THREE.PlaneGeometry(0.18, 0.18);
+        const col = confettiPalette[Math.floor(Math.random() * confettiPalette.length)];
+        const cMat = new THREE.MeshBasicMaterial({ color: col, side: THREE.DoubleSide });
+        const mesh = new THREE.Mesh(cGeo, cMat);
+        mesh.position.copy(pos);
+        mesh.position.y += 0.4;
+        scene.add(mesh);
+
+        confettiParticles.push({
+          mesh: mesh,
+          vel: new THREE.Vector3(
+            (Math.random() - 0.5) * 8.5,
+            Math.random() * 6.5 + 3.0,
+            (Math.random() - 0.5) * 8.5
+          ),
+          rotVel: new THREE.Vector3(
+            Math.random() * 12,
+            Math.random() * 12,
+            Math.random() * 12
+          ),
+          life: 1.0
+        });
+      }
+    }
+
+    const rabbits = [];
+    function createRabbit() {
+      const rGroup = new THREE.Group();
+      const bunnyMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, flatShading: true });
+      const innerEarMat = new THREE.MeshStandardMaterial({ color: 0xfbcfe8, roughness: 0.8 });
+
+      const body = new THREE.Mesh(new THREE.DodecahedronGeometry(0.35, 1), bunnyMat);
+      body.position.y = 0.35;
+      body.scale.set(0.9, 0.85, 1.2);
+      body.castShadow = true;
+      rGroup.add(body);
+
+      const head = new THREE.Mesh(new THREE.DodecahedronGeometry(0.24, 1), bunnyMat);
+      head.position.set(0, 0.55, 0.32);
+      head.castShadow = true;
+      rGroup.add(head);
+
+      const earGeo = new THREE.CylinderGeometry(0.04, 0.08, 0.35, 5);
+      const earL = new THREE.Mesh(earGeo, innerEarMat);
+      earL.position.set(-0.1, 0.82, 0.28);
+      earL.rotation.z = -0.2;
+      earL.rotation.x = -0.15;
+      const earR = earL.clone();
+      earR.position.x = 0.1;
+      earR.rotation.z = 0.2;
+      rGroup.add(earL, earR);
+
+      const tail = new THREE.Mesh(new THREE.DodecahedronGeometry(0.1, 0), bunnyMat);
+      tail.position.set(0, 0.35, -0.42);
+      rGroup.add(tail);
+
+      const rx = (Math.random() - 0.5) * 32;
+      const rz = (Math.random() - 0.5) * 32;
+      const ry = getTerrainHeight(rx, rz);
+      rGroup.position.set(rx, ry, rz);
+      scene.add(rGroup);
+
+      const rabbitObj = {
+        type: 'bunny',
+        group: rGroup,
+        hopTimer: Math.random() * 3,
+        hopDuration: 0.5,
+        isHopping: false,
+        hopProgress: 0,
+        startPos: new THREE.Vector3(rx, ry, rz),
+        targetPos: new THREE.Vector3(rx, ry, rz),
+        heading: Math.random() * Math.PI * 2,
+        active: true
+      };
+
+      smackableCreatures.push(rabbitObj);
+      return rabbitObj;
+    }
+
+    for (let r = 0; r < 7; r++) {
+      rabbits.push(createRabbit());
+    }
+
+    const frogs = [];
+    function createFrog(x, z) {
+      const fGroup = new THREE.Group();
+      const frogMat = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.6, flatShading: true });
+      const eyeMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2 });
+
+      const body = new THREE.Mesh(new THREE.DodecahedronGeometry(0.24, 0), frogMat);
+      body.position.y = 0.16;
+      body.scale.set(1.1, 0.7, 1.2);
+      fGroup.add(body);
+
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), eyeMat);
+      eyeL.position.set(-0.12, 0.27, 0.12);
+      const eyeR = eyeL.clone();
+      eyeR.position.x = 0.12;
+      fGroup.add(eyeL, eyeR);
+
+      const y = getTerrainHeight(x, z);
+      fGroup.position.set(x, y, z);
+      scene.add(fGroup);
+
+      const frogObj = {
+        type: 'frog',
+        group: fGroup,
+        hopCooldown: 2 + Math.random() * 5,
+        hopProgress: 0,
+        isHopping: false,
+        basePos: new THREE.Vector3(x, y, z),
+        active: true
+      };
+
+      smackableCreatures.push(frogObj);
+      return frogObj;
+    }
+
+    frogs.push(createFrog(6, 6), createFrog(-7, 8), createFrog(8, -8), createFrog(-11, -5));
+
+    const player = {
+      group: new THREE.Group(),
+      velocity: new THREE.Vector3(),
+      isGrounded: true,
+      speed: 7.5,
+      sprintMultiplier: 1.55,
+      jumpForce: 9.8,
+      rotationAngle: 0,
+      isAttacking: false,
+      attackTime: 0,
+      attackDuration: 0.32
+    };
+    scene.add(player.group);
+
+    const heroineMesh = new THREE.Group();
+
+    const skirtGeo = new THREE.CylinderGeometry(0.24, 0.48, 0.75, 8);
+    const dressMat = new THREE.MeshStandardMaterial({ color: 0xec4899, roughness: 0.5, flatShading: true });
+    const skirt = new THREE.Mesh(skirtGeo, dressMat);
+    skirt.position.y = 0.72;
+    skirt.castShadow = true;
+    heroineMesh.add(skirt);
+
+    const bodiceGeo = new THREE.CylinderGeometry(0.22, 0.24, 0.55, 7);
+    const bodiceMat = new THREE.MeshStandardMaterial({ color: 0xfce7f3, roughness: 0.5, flatShading: true });
+    const bodice = new THREE.Mesh(bodiceGeo, bodiceMat);
+    bodice.position.y = 1.25;
+    bodice.castShadow = true;
+    heroineMesh.add(bodice);
+
+    const sash = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.25, 0.25, 0.12, 8),
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.6, roughness: 0.3 })
+    );
+    sash.position.y = 1.02;
+    heroineMesh.add(sash);
+
+    const headGeo = new THREE.SphereGeometry(0.26, 8, 8);
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xffedd5, roughness: 0.4 });
+    const head = new THREE.Mesh(headGeo, skinMat);
+    head.position.y = 1.72;
+    head.castShadow = true;
+    heroineMesh.add(head);
+
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.7, flatShading: true });
+    const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.29, 8, 8), hairMat);
+    hairCap.position.set(0, 1.78, -0.04);
+    heroineMesh.add(hairCap);
+
+    const ponytail = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.65, 6), hairMat);
+    ponytail.position.set(0, 1.7, -0.38);
+    ponytail.rotation.x = -Math.PI / 3;
+    heroineMesh.add(ponytail);
+
+    const hairBow = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(0.12, 0),
+      new THREE.MeshStandardMaterial({ color: 0x9333ea, roughness: 0.3 })
+    );
+    hairBow.position.set(0, 1.9, -0.28);
+    heroineMesh.add(hairBow);
+
+    const bootMat = new THREE.MeshStandardMaterial({ color: 0x831843, roughness: 0.7, flatShading: true });
+    const bootL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.45, 6), bootMat);
+    bootL.position.set(-0.16, 0.25, 0);
+    bootL.castShadow = true;
+    const bootR = bootL.clone();
+    bootR.position.x = 0.16;
+    heroineMesh.add(bootL, bootR);
+
+    const swordPivot = new THREE.Group();
+    swordPivot.position.set(0.42, 1.25, 0.05);
+    heroineMesh.add(swordPivot);
+
+    const armGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.5, 6);
+    const armMesh = new THREE.Mesh(armGeo, dressMat);
+    armMesh.position.y = -0.2;
+    swordPivot.add(armMesh);
+
+    const bladeGroup = new THREE.Group();
+    bladeGroup.position.set(0, -0.4, 0.15);
+
+    const guard = new THREE.Mesh(
+      new THREE.TorusGeometry(0.16, 0.03, 6, 12),
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.2 })
+    );
+    guard.rotation.x = Math.PI / 2;
+    bladeGroup.add(guard);
+
+    const rapier = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.02, 0.05, 1.3, 5),
+      new THREE.MeshStandardMaterial({ color: 0xfce7f3, emissive: 0xf43f5e, emissiveIntensity: 0.6, metalness: 0.9, roughness: 0.1 })
+    );
+    rapier.position.z = 0.65;
+    rapier.rotation.x = Math.PI / 2;
+    rapier.castShadow = true;
+    bladeGroup.add(rapier);
+
+    const slashArcGeo = new THREE.RingGeometry(0.6, 1.6, 16, 1, 0, Math.PI * 0.95);
+    const slashArcMat = new THREE.MeshBasicMaterial({
+      color: 0xf43f5e,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide
+    });
+    const slashArc = new THREE.Mesh(slashArcGeo, slashArcMat);
+    slashArc.rotation.x = Math.PI / 2;
+    slashArc.position.set(0, 0.9, 0.7);
+    heroineMesh.add(slashArc);
+
+    swordPivot.add(bladeGroup);
+    player.group.add(heroineMesh);
+    player.group.position.set(0, getTerrainHeight(0, 4), 4);
+
+    const trailCount = 35;
+    const trailPositions = new Float32Array(trailCount * 3);
+    const trailGeo = new THREE.BufferGeometry();
+    trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+
+    const trailMat = new THREE.PointsMaterial({
+      color: 0xf472b6,
+      size: 0.38,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending
+    });
+    const glitterTrail = new THREE.Points(trailGeo, trailMat);
+    scene.add(glitterTrail);
+
+    const trailHistory = [];
+    for (let t = 0; t < trailCount; t++) {
+      trailHistory.push({ x: 0, y: -99, z: 0, life: 0 });
+    }
+
+    const interactiveProps = [];
+    const sparkleBurstDebris = [];
+
+    const pastelPinkMat = new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.5, flatShading: true });
+    const pastelPurpleMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, roughness: 0.5, flatShading: true });
+    const mossWoodMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.8, flatShading: true });
+    const goldAccMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.2 });
+
+    function createArtifactMesh(iconType, colorHex) {
+      const g = new THREE.Group();
+      if (iconType === 'vr') {
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.5, 0.6), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 }));
+        const strap = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.06, 6, 16), new THREE.MeshStandardMaterial({ color: 0xec4899 }));
+        strap.rotation.x = Math.PI / 2;
+        const heartDeco = new THREE.Mesh(new THREE.DodecahedronGeometry(0.14, 0), new THREE.MeshBasicMaterial({ color: 0xf43f5e }));
+        heartDeco.position.z = 0.32;
+        g.add(visor, strap, heartDeco);
+      } else if (iconType === 'controller') {
+        const pad = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.3, 0.6), new THREE.MeshStandardMaterial({ color: 0xfdf2f8, roughness: 0.4 }));
+        const btnL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.1, 8), new THREE.MeshBasicMaterial({ color: 0x9333ea }));
+        btnL.position.set(-0.28, 0.17, 0);
+        const btnR = btnL.clone();
+        btnR.position.x = 0.28;
+        btnR.material = new THREE.MeshBasicMaterial({ color: 0xec4899 });
+        g.add(pad, btnL, btnR);
+      } else if (iconType === 'crystal') {
+        const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.65, 0), new THREE.MeshStandardMaterial({ color: colorHex, emissive: colorHex, emissiveIntensity: 0.5, roughness: 0.1 }));
+        g.add(crystal);
+      } else if (iconType === 'tesseract') {
+        const outer = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), new THREE.MeshStandardMaterial({ color: 0xffffff, wireframe: true }));
+        const core = new THREE.Mesh(new THREE.DodecahedronGeometry(0.35, 0), new THREE.MeshBasicMaterial({ color: colorHex }));
+        g.add(outer, core);
+      } else {
+        const scroll = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.9, 12), new THREE.MeshStandardMaterial({ color: 0xffedd5, roughness: 0.8 }));
+        scroll.rotation.z = Math.PI / 2;
+        const ribbon = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.03, 6, 12), new THREE.MeshBasicMaterial({ color: 0xf43f5e }));
+        g.add(scroll, ribbon);
+      }
+      return g;
+    }
+
+    function createInteractiveProp(project) {
+      const root = new THREE.Group();
+      const px = project.position.x;
+      const pz = project.position.z;
+      const py = getTerrainHeight(px, pz);
+      root.position.set(px, py, pz);
+
+      const petalPedestal = new THREE.Mesh(
+        new THREE.CylinderGeometry(2.1, 2.4, 0.3, 10),
+        new THREE.MeshStandardMaterial({ color: 0xfdf4ff, roughness: 0.8, flatShading: true })
+      );
+      petalPedestal.position.y = 0.15;
+      petalPedestal.receiveShadow = true;
+      root.add(petalPedestal);
+
+      const objectGroup = new THREE.Group();
+      root.add(objectGroup);
+
+      let lidGroup = null;
+
+      if (project.type === 'chest_pastel') {
+        const base = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.8, 1.1), pastelPinkMat);
+        base.position.y = 0.65;
+        base.castShadow = true;
+        objectGroup.add(base);
+
+        const trim = new THREE.Mesh(new THREE.BoxGeometry(1.64, 0.84, 0.12), goldAccMat);
+        trim.position.set(0, 0.65, 0.35);
+        objectGroup.add(trim);
+
+        lidGroup = new THREE.Group();
+        lidGroup.position.set(0, 1.05, -0.55);
+        const lidGeo = new THREE.CylinderGeometry(0.56, 0.56, 1.62, 8, 1, false, 0, Math.PI);
+        lidGeo.rotateZ(Math.PI / 2);
+        const lidMesh = new THREE.Mesh(lidGeo, pastelPurpleMat);
+        lidMesh.position.set(0, 0, 0.55);
+        lidMesh.castShadow = true;
+        lidGroup.add(lidMesh);
+        objectGroup.add(lidGroup);
+
+      } else if (project.type === 'gift_box') {
+        const box = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.3, 1.3), pastelPurpleMat);
+        box.position.y = 0.8;
+        box.castShadow = true;
+        objectGroup.add(box);
+
+        const rib1 = new THREE.Mesh(new THREE.BoxGeometry(1.34, 1.34, 0.22), pastelPinkMat);
+        rib1.position.y = 0.8;
+        const rib2 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.34, 1.34), pastelPinkMat);
+        rib2.position.y = 0.8;
+        objectGroup.add(rib1, rib2);
+
+      } else if (project.type === 'barrel_moss') {
+        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 1.4, 8), mossWoodMat);
+        barrel.position.y = 0.95;
+        barrel.castShadow = true;
+        objectGroup.add(barrel);
+
+        const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.05, 6, 12), goldAccMat);
+        hoop.rotation.x = Math.PI / 2;
+        hoop.position.y = 1.15;
+        objectGroup.add(hoop);
+
+      } else if (project.type === 'star_relic') {
+        const starBase = new THREE.Mesh(new THREE.OctahedronGeometry(0.85, 0), pastelPurpleMat);
+        starBase.position.y = 1.0;
+        starBase.castShadow = true;
+        objectGroup.add(starBase);
+
+      } else {
+        const gazeboRoof = new THREE.Mesh(
+          new THREE.ConeGeometry(1.8, 1.1, 6),
+          new THREE.MeshStandardMaterial({ color: 0xec4899, roughness: 0.6, flatShading: true })
+        );
+        gazeboRoof.position.y = 2.4;
+        objectGroup.add(gazeboRoof);
+
+        for (let p = 0; p < 4; p++) {
+          const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.8, 6), pastelPinkMat);
+          const rad = (p * Math.PI) / 2;
+          pillar.position.set(Math.cos(rad) * 1.1, 1.2, Math.sin(rad) * 1.1);
+          objectGroup.add(pillar);
+        }
+
+        const lantern = new THREE.PointLight(0xfde047, 2.2, 10);
+        lantern.position.y = 1.8;
+        objectGroup.add(lantern);
+      }
+
+      const artifactGroup = new THREE.Group();
+      artifactGroup.position.set(0, 0.5, 0);
+      artifactGroup.scale.set(0.01, 0.01, 0.01);
+      artifactGroup.visible = false;
+
+      const iconMesh = createArtifactMesh(project.iconType, project.color);
+      artifactGroup.add(iconMesh);
+
+      const halo = new THREE.Mesh(
+        new THREE.RingGeometry(0.65, 1.0, 16),
+        new THREE.MeshBasicMaterial({ color: project.color, side: THREE.DoubleSide, transparent: true, opacity: 0.7 })
+      );
+      halo.rotation.x = Math.PI / 2;
+      halo.position.y = -0.25;
+      artifactGroup.add(halo);
+
+      const artLight = new THREE.PointLight(project.color, 0, 8);
+      artLight.position.y = 0.5;
+      artifactGroup.add(artLight);
+
+      root.add(artifactGroup);
+
+      const labelCanvas = document.createElement('canvas');
+      labelCanvas.width = 256;
+      labelCanvas.height = 64;
+      const ctx = labelCanvas.getContext('2d');
+      ctx.fillStyle = 'rgba(0,0,0,0)';
+      ctx.fillRect(0, 0, 256, 64);
+      ctx.font = 'bold 22px Comfortaa, cursive';
+      ctx.fillStyle = '#9d174d';
+      ctx.textAlign = 'center';
+      ctx.fillText(project.zone, 128, 40);
+
+      const labelTex = new THREE.CanvasTexture(labelCanvas);
+      const labelMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.2, 0.8),
+        new THREE.MeshBasicMaterial({ map: labelTex, transparent: true, side: THREE.DoubleSide })
+      );
+      labelMesh.position.y = 3.2;
+      root.add(labelMesh);
+
+      scene.add(root);
+
+      interactiveProps.push({
+        data: project,
+        root: root,
+        objectGroup: objectGroup,
+        lid: lidGroup,
+        artifact: artifactGroup,
+        artLight: artLight,
+        label: labelMesh,
+        isDiscovered: false,
+        isBroken: false,
+        revealTime: 0
+      });
+    }
+
+    PORTFOLIO_PROJECTS.forEach(p => createInteractiveProp(p));
+
+    function spawnSparkleBurst(pos, colorHex) {
+      const count = 18;
+      const fragMat = new THREE.MeshBasicMaterial({ color: colorHex });
+
+      for (let i = 0; i < count; i++) {
+        const frag = new THREE.Mesh(new THREE.DodecahedronGeometry(0.12 + Math.random() * 0.1, 0), fragMat);
+        frag.position.copy(pos);
+        frag.position.y += 0.6;
+        scene.add(frag);
+
+        sparkleBurstDebris.push({
+          mesh: frag,
+          vel: new THREE.Vector3((Math.random() - 0.5) * 8, 4 + Math.random() * 6, (Math.random() - 0.5) * 8),
+          life: 1.0
+        });
+      }
+    }
+
+    const keys = { w: false, a: false, s: false, d: false, shift: false, space: false };
+    const mouse = {
+      isDragging: false,
+      prevX: 0,
+      prevY: 0,
+      yaw: 0,
+      pitch: 0.32,
+      distance: 6.2
+    };
+
+    const camLookTarget = new THREE.Vector3();
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.w = true;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.a = true;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') keys.s = true;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.d = true;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.shift = true;
+      if (e.code === 'Space') {
+        if (player.isGrounded) {
+          player.velocity.y = player.jumpForce;
+          player.isGrounded = false;
+        }
+        keys.space = true;
+      }
+      if (e.code === 'Escape') {
+        closeProjectModal();
+        closeStandardView();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.w = false;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.a = false;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') keys.s = false;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.d = false;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys.shift = false;
+      if (e.code === 'Space') keys.space = false;
+    });
+
+    canvas.addEventListener('click', () => {
+      if (!isModalOpen && !isStandardViewOpen) {
+        sound.init();
+        triggerFairySlash();
+      }
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (e.button === 0) {
+        mouse.isDragging = true;
+        mouse.prevX = e.clientX;
+        mouse.prevY = e.clientY;
+      }
+    });
+
+    window.addEventListener('mouseup', () => { mouse.isDragging = false; });
+
+    window.addEventListener('mousemove', (e) => {
+      if (document.pointerLockElement === canvas) {
+        mouse.yaw -= e.movementX * 0.003;
+        mouse.pitch = Math.max(0.06, Math.min(1.15, mouse.pitch + e.movementY * 0.003));
+      } else if (mouse.isDragging) {
+        const dx = e.clientX - mouse.prevX;
+        const dy = e.clientY - mouse.prevY;
+        mouse.prevX = e.clientX;
+        mouse.prevY = e.clientY;
+        mouse.yaw -= dx * 0.004;
+        mouse.pitch = Math.max(0.06, Math.min(1.15, mouse.pitch + dy * 0.004));
+      }
+    });
+
+    canvas.addEventListener('wheel', (e) => {
+      mouse.distance = Math.max(3.2, Math.min(12.0, mouse.distance + e.deltaY * 0.005));
+    }, { passive: true });
+
+    // Touch Virtual Joystick
+    const joystickZone = document.getElementById('joystick-zone');
+    const joystickKnob = document.getElementById('joystick-knob');
+    let touchId = null;
+    let stickCenter = { x: 0, y: 0 };
+    const stickVec = { x: 0, y: 0 };
+
+    joystickZone.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      sound.init();
+      const t = e.changedTouches[0];
+      touchId = t.identifier;
+      const r = joystickZone.getBoundingClientRect();
+      stickCenter = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.identifier === touchId) {
+          const dx = t.clientX - stickCenter.x;
+          const dy = t.clientY - stickCenter.y;
+          const dist = Math.min(45, Math.hypot(dx, dy));
+          const angle = Math.atan2(dy, dx);
+          const nx = Math.cos(angle) * dist;
+          const ny = Math.sin(angle) * dist;
+          joystickKnob.style.transform = `translate(${nx}px, ${ny}px)`;
+          stickVec.x = nx / 45;
+          stickVec.y = ny / 45;
+        }
+      }
+    }, { passive: true });
+
+    const stopStick = (e) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === touchId) {
+          touchId = null;
+          joystickKnob.style.transform = 'translate(0px, 0px)';
+          stickVec.x = 0;
+          stickVec.y = 0;
+        }
+      }
+    };
+    window.addEventListener('touchend', stopStick);
+    window.addEventListener('touchcancel', stopStick);
+
+    document.getElementById('mobile-attack-btn').addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      sound.init();
+      triggerFairySlash();
+    });
+
+    document.getElementById('mobile-jump-btn').addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      sound.init();
+      if (player.isGrounded) {
+        player.velocity.y = player.jumpForce;
+        player.isGrounded = false;
+      }
+    });
+
+    function triggerFairySlash() {
+      if (player.isAttacking) return;
+      player.isAttacking = true;
+      player.attackTime = 0;
+      sound.playSlash();
+
+      setTimeout(() => {
+        detectSlashHit();
+      }, 75);
+    }
+
+    // Hit detection for Props AND smackable Critters (Frogs and Bunnies only)
+    function detectSlashHit() {
+      const hitRadius = 3.6;
+      let struck = false;
+
+      // 1. Interactive Chests/Props
+      interactiveProps.forEach(prop => {
+        const d = Math.hypot(player.group.position.x - prop.root.position.x, player.group.position.z - prop.root.position.z);
+        if (d <= hitRadius) {
+          struck = true;
+          onPropUnveiled(prop);
+        }
+      });
+
+      // 2. Smack Frogs and Bunnies only -> Confetti Burst
+      smackableCreatures.forEach(critter => {
+        if (!critter.active) return;
+        const d = Math.hypot(player.group.position.x - critter.group.position.x, player.group.position.z - critter.group.position.z);
+        if (d <= hitRadius) {
+          critter.active = false;
+          critter.group.visible = false;
+          triggerCritterConfetti(critter.group.position);
+          mouse.pitch += 0.015;
+
+          // Respawn after 6 seconds at random meadow coordinates
+          setTimeout(() => {
+            const rx = (Math.random() - 0.5) * 32;
+            const rz = (Math.random() - 0.5) * 32;
+            const ry = getTerrainHeight(rx, rz);
+            critter.group.position.set(rx, ry, rz);
+            if (critter.type === 'frog') {
+              critter.basePos.set(rx, ry, rz);
+            }
+            critter.group.visible = true;
+            critter.active = true;
+          }, 6000);
+        }
+      });
+
+      if (struck) {
+        sound.playSparkleImpact();
+        mouse.pitch += 0.015;
+      }
+    }
+
+    function onPropUnveiled(prop) {
+      if (!prop.isDiscovered) {
+        prop.isDiscovered = true;
+        updateBadge();
+
+        spawnSparkleBurst(prop.root.position, prop.data.color);
+
+        if (prop.data.type === 'gift_box' || prop.data.type === 'barrel_moss') {
+          prop.isBroken = true;
+          prop.objectGroup.visible = false;
+        }
+
+        prop.revealTime = 0.01;
+        sound.playRevealHarp();
+
+        setTimeout(() => {
+          openProjectModal(prop.data);
+        }, 750);
+      } else {
+        openProjectModal(prop.data);
+      }
+    }
+
+    let isModalOpen = false;
+    let isStandardViewOpen = false;
+
+    const projectModal = document.getElementById('project-modal');
+    const promptElem = document.getElementById('interaction-prompt');
+    const crosshair = document.getElementById('crosshair');
+    const discoveryBadge = document.getElementById('discovery-badge');
+    const standardView = document.getElementById('standard-portfolio-view');
+
+    function updateBadge() {
+      const found = interactiveProps.filter(p => p.isDiscovered).length;
+      discoveryBadge.textContent = `${found} / ${interactiveProps.length} Discovered`;
+    }
+
+    function openProjectModal(data) {
+      isModalOpen = true;
+      document.getElementById('project-title').textContent = data.title;
+      document.getElementById('project-category-badge').textContent = data.category;
+      document.getElementById('project-year-badge').textContent = data.year;
+      document.getElementById('project-description').textContent = data.description;
+
+      const previewIcon = document.getElementById('project-preview-icon');
+      if (data.iconType === 'vr') previewIcon.textContent = '🌸';
+      else if (data.iconType === 'controller') previewIcon.textContent = '✨';
+      else if (data.iconType === 'crystal') previewIcon.textContent = '💎';
+      else if (data.iconType === 'tesseract') previewIcon.textContent = '🔮';
+      else previewIcon.textContent = '📜';
+
+      const tags = document.getElementById('project-tags');
+      tags.innerHTML = '';
+      data.tools.forEach(tool => {
+        const span = document.createElement('span');
+        span.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700 font-semibold border border-pink-200';
+        span.textContent = tool;
+        tags.appendChild(span);
+      });
+
+      document.getElementById('project-demo-link').href = data.demoUrl;
+      document.getElementById('project-github-link').href = data.githubUrl;
+
+      projectModal.classList.remove('translate-x-full');
+    }
+
+    function closeProjectModal() {
+      isModalOpen = false;
+      projectModal.classList.add('translate-x-full');
+    }
+
+    document.getElementById('close-modal-btn').addEventListener('click', closeProjectModal);
+
+    function openStandardView() {
+      isStandardViewOpen = true;
+      closeProjectModal();
+      standardView.classList.remove('hidden');
+      setTimeout(() => {
+        standardView.classList.remove('opacity-0');
+      }, 20);
+      renderStandardProjects('all');
+    }
+
+    function closeStandardView() {
+      isStandardViewOpen = false;
+      standardView.classList.add('opacity-0');
+      setTimeout(() => {
+        standardView.classList.add('hidden');
+      }, 400);
+    }
+
+    document.getElementById('switch-to-standard-btn').addEventListener('click', openStandardView);
+    document.getElementById('profile-badge-btn').addEventListener('click', openStandardView);
+    document.getElementById('intro-standard-btn').addEventListener('click', () => {
+      introScreen.classList.add('opacity-0', 'pointer-events-none');
+      openStandardView();
+    });
+    document.getElementById('back-to-game-btn').addEventListener('click', closeStandardView);
+
+    const standardProjectGrid = document.getElementById('standard-project-grid');
+    function renderStandardProjects(filter) {
+      standardProjectGrid.innerHTML = '';
+      const list = filter === 'all' 
+        ? PORTFOLIO_PROJECTS 
+        : PORTFOLIO_PROJECTS.filter(p => p.category === filter);
+
+      list.forEach(project => {
+        const card = document.createElement('div');
+        card.className = 'ethereal-glass rounded-2xl p-5 border border-pink-200 flex flex-col justify-between hover:-translate-y-1 hover:shadow-xl transition duration-300';
+        
+        card.innerHTML = `
+          <div>
+            <div class="w-full h-40 rounded-xl overflow-hidden mb-4 relative bg-pink-100">
+              <img src="${project.thumbnail}" alt="${project.title}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/600x400/f472b6/ffffff?text=${encodeURIComponent(project.title)}'" />
+              <span class="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-fairy font-bold bg-pink-500 text-white shadow">${project.year}</span>
+            </div>
+            <span class="text-[11px] font-bold text-pink-600 uppercase tracking-wider block mb-1 font-fairy">${project.category}</span>
+            <h3 class="font-fairy text-xl font-bold text-pink-950 mb-2 leading-tight">${project.title}</h3>
+            <p class="text-slate-600 text-xs md:text-sm mb-4 leading-relaxed line-clamp-3">${project.description}</p>
+          </div>
+          <div>
+            <div class="flex flex-wrap gap-1.5 mb-4">
+              ${project.tools.map(t => `<span class="px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-[10px] font-medium border border-pink-200">${t}</span>`).join('')}
+            </div>
+            <div class="flex items-center space-x-2 pt-2 border-t border-pink-200">
+              <a href="${project.demoUrl}" target="_blank" class="flex-1 py-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-400 text-white text-xs font-bold text-center hover:opacity-90 transition">
+                View Project
+              </a>
+              <a href="${project.githubUrl}" target="_blank" class="px-3 py-2 rounded-full bg-white text-pink-800 hover:bg-pink-100 border border-pink-200 text-xs font-semibold transition">
+                Behance
+              </a>
+            </div>
+          </div>
+        `;
+        standardProjectGrid.appendChild(card);
+      });
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.filter-btn').forEach(b => {
+          b.classList.remove('bg-pink-500', 'text-white');
+          b.classList.add('bg-white/20', 'text-pink-100');
+        });
+        e.currentTarget.classList.add('bg-pink-500', 'text-white');
+        e.currentTarget.classList.remove('bg-white/20', 'text-pink-100');
+        renderStandardProjects(e.currentTarget.dataset.filter);
+      });
+    });
+
+    const audioBtn = document.getElementById('toggle-audio-btn');
+    const audioOnIcon = document.getElementById('audio-on-icon');
+    const audioOffIcon = document.getElementById('audio-off-icon');
+
+    audioBtn.addEventListener('click', () => {
+      sound.init();
+      const on = sound.toggle();
+      audioOnIcon.classList.toggle('hidden', !on);
+      audioOffIcon.classList.toggle('hidden', on);
+    });
+
+    const introScreen = document.getElementById('intro-screen');
+    document.getElementById('start-adventure-btn').addEventListener('click', () => {
+      sound.init();
+      introScreen.classList.add('opacity-0', 'pointer-events-none');
+    });
+
+    const clock = new THREE.Clock();
+
+    function updateSimulation(delta) {
+      if (isStandardViewOpen) return;
+
+      const elapsed = clock.getElapsedTime();
+
+      // 1. Player Locomotion
+      let mx = 0;
+      let mz = 0;
+      if (keys.w) mz -= 1;
+      if (keys.s) mz += 1;
+      if (keys.a) mx -= 1;
+      if (keys.d) mx += 1;
+
+      if (touchId !== null) {
+        mx += stickVec.x;
+        mz += stickVec.y;
+      }
+
+      const moveLen = Math.hypot(mx, mz);
+      const isMoving = moveLen > 0.05;
+
+      if (isMoving) {
+        const nx = mx / Math.max(1, moveLen);
+        const nz = mz / Math.max(1, moveLen);
+
+        const fwd = new THREE.Vector3(-Math.sin(mouse.yaw), 0, -Math.cos(mouse.yaw));
+        const rgt = new THREE.Vector3(Math.cos(mouse.yaw), 0, -Math.sin(mouse.yaw));
+
+        const moveDir = new THREE.Vector3().addScaledVector(rgt, nx).addScaledVector(fwd, nz).normalize();
+        const curSpeed = player.speed * (keys.shift ? player.sprintMultiplier : 1.0);
+
+        player.group.position.x += moveDir.x * curSpeed * delta;
+        player.group.position.z += moveDir.z * curSpeed * delta;
+
+        const targetRot = Math.atan2(moveDir.x, moveDir.z);
+        player.rotationAngle = THREE.MathUtils.lerp(player.rotationAngle, targetRot, 14 * delta);
+        heroineMesh.rotation.y = player.rotationAngle;
+
+        skirt.position.y = 0.72 + Math.abs(Math.sin(elapsed * 13)) * 0.08;
+        ponytail.rotation.x = -Math.PI / 3 + Math.sin(elapsed * 13) * 0.15;
+
+        const headTrail = trailHistory.shift();
+        headTrail.x = player.group.position.x + (Math.random() - 0.5) * 0.3;
+        headTrail.y = player.group.position.y + 0.6 + (Math.random() - 0.5) * 0.3;
+        headTrail.z = player.group.position.z + (Math.random() - 0.5) * 0.3;
+        headTrail.life = 1.0;
+        trailHistory.push(headTrail);
+      } else {
+        skirt.position.y = 0.72 + Math.sin(elapsed * 2.5) * 0.02;
+        ponytail.rotation.x = -Math.PI / 3 + Math.sin(elapsed * 2.5) * 0.04;
+      }
+
+      const tPos = trailGeo.attributes.position.array;
+      for (let i = 0; i < trailCount; i++) {
+        const item = trailHistory[i];
+        if (item.life > 0) {
+          item.life -= delta * 1.4;
+          item.y += delta * 0.3;
+        }
+        tPos[i * 3] = item.x;
+        tPos[i * 3 + 1] = item.y;
+        tPos[i * 3 + 2] = item.z;
+      }
+      trailGeo.attributes.position.needsUpdate = true;
+
+      const groundY = getTerrainHeight(player.group.position.x, player.group.position.z);
+      player.velocity.y -= 25.0 * delta;
+      player.group.position.y += player.velocity.y * delta;
+
+      if (player.group.position.y <= groundY) {
+        player.group.position.y = groundY;
+        player.velocity.y = 0;
+        player.isGrounded = true;
+      }
+
+      const pDist = Math.hypot(player.group.position.x, player.group.position.z);
+      if (pDist > 32) {
+        const rad = Math.atan2(player.group.position.z, player.group.position.x);
+        player.group.position.x = Math.cos(rad) * 32;
+        player.group.position.z = Math.sin(rad) * 32;
+      }
+
+      if (player.isAttacking) {
+        player.attackTime += delta;
+        const progress = player.attackTime / player.attackDuration;
+
+        if (progress < 1.0) {
+          const swing = Math.sin(progress * Math.PI) * 2.1;
+          swordPivot.rotation.x = swing;
+          swordPivot.rotation.y = -swing * 0.7;
+          slashArc.material.opacity = Math.sin(progress * Math.PI) * 0.9;
+        } else {
+          player.isAttacking = false;
+          swordPivot.rotation.set(0, 0, 0);
+          slashArc.material.opacity = 0;
+        }
+      }
+
+      camLookTarget.copy(player.group.position);
+      camLookTarget.y += 1.5;
+
+      const cDist = mouse.distance;
+      const cY = camLookTarget.y + Math.sin(mouse.pitch) * cDist;
+      const cHoriz = Math.cos(mouse.pitch) * cDist;
+      const cX = camLookTarget.x + Math.sin(mouse.yaw) * cHoriz;
+      const cZ = camLookTarget.z + Math.cos(mouse.yaw) * cHoriz;
+
+      const safeCY = Math.max(cY, getTerrainHeight(cX, cZ) + 0.5);
+      camera.position.set(cX, safeCY, cZ);
+      camera.lookAt(camLookTarget);
+
+      butterflies.forEach(b => {
+        b.angle += delta * b.speed * 0.5;
+        b.group.position.x = b.center.x + Math.sin(b.angle) * 3.5;
+        b.group.position.z = b.center.z + Math.cos(b.angle) * 3.5;
+        b.group.position.y = b.center.y + Math.sin(elapsed * 3 + b.wingPhase) * 0.5;
+
+        const flap = Math.sin(elapsed * 16 + b.wingPhase) * 0.9;
+        b.leftWing.rotation.y = flap;
+        b.rightWing.rotation.y = -flap;
+        b.group.rotation.y = -b.angle;
+      });
+
+      rabbits.forEach(r => {
+        if (!r.active) return;
+        r.hopTimer -= delta;
+        if (r.hopTimer <= 0 && !r.isHopping) {
+          r.isHopping = true;
+          r.hopProgress = 0;
+          r.startPos.copy(r.group.position);
+          r.heading += (Math.random() - 0.5) * 1.5;
+          const hopDist = 1.4 + Math.random() * 0.8;
+          r.targetPos.set(
+            r.startPos.x + Math.sin(r.heading) * hopDist,
+            0,
+            r.startPos.z + Math.cos(r.heading) * hopDist
+          );
+          if (Math.hypot(r.targetPos.x, r.targetPos.z) > 28) {
+            r.heading += Math.PI;
+            r.targetPos.set(r.startPos.x, 0, r.startPos.z);
+          }
+          r.targetPos.y = getTerrainHeight(r.targetPos.x, r.targetPos.z);
+          sound.playRabbitHop();
+        }
+
+        if (r.isHopping) {
+          r.hopProgress += delta / r.hopDuration;
+          if (r.hopProgress >= 1) {
+            r.hopProgress = 1;
+            r.isHopping = false;
+            r.hopTimer = 1.5 + Math.random() * 3.5;
+          }
+          const t = r.hopProgress;
+          r.group.position.lerpVectors(r.startPos, r.targetPos, t);
+          r.group.position.y += Math.sin(t * Math.PI) * 0.6;
+          r.group.rotation.y = r.heading;
+        }
+      });
+
+      frogs.forEach(f => {
+        if (!f.active) return;
+        f.hopCooldown -= delta;
+        if (f.hopCooldown <= 0 && !f.isHopping) {
+          f.isHopping = true;
+          f.hopProgress = 0;
+        }
+        if (f.isHopping) {
+          f.hopProgress += delta * 2.8;
+          f.group.position.y = f.basePos.y + Math.sin(f.hopProgress * Math.PI) * 0.5;
+          if (f.hopProgress >= 1) {
+            f.isHopping = false;
+            f.group.position.y = f.basePos.y;
+            f.hopCooldown = 3 + Math.random() * 6;
+          }
+        }
+      });
+
+      let nearestDist = Infinity;
+      let targetItem = null;
+
+      interactiveProps.forEach(prop => {
+        const d = Math.hypot(player.group.position.x - prop.root.position.x, player.group.position.z - prop.root.position.z);
+        if (d < nearestDist) {
+          nearestDist = d;
+          targetItem = prop;
+        }
+
+        prop.label.lookAt(camera.position);
+
+        if (prop.revealTime > 0) {
+          prop.revealTime = Math.min(1.0, prop.revealTime + delta * 1.6);
+          const t = prop.revealTime;
+          prop.artifact.visible = true;
+          prop.artifact.position.y = 0.5 + Math.sin(t * Math.PI * 0.5) * 2.2;
+          const s = Math.sin(t * Math.PI * 0.5);
+          prop.artifact.scale.set(s, s, s);
+          prop.artifact.rotation.y += delta * 1.8;
+          prop.artLight.intensity = t * 2.5;
+
+          if (prop.lid && !prop.isBroken) {
+            prop.lid.rotation.x = -Math.sin(t * Math.PI * 0.5) * 1.6;
+          }
+        } else if (prop.isDiscovered) {
+          prop.artifact.rotation.y += delta * 0.8;
+          prop.artifact.position.y = 2.7 + Math.sin(elapsed * 2.5) * 0.12;
+        }
+      });
+
+      if (nearestDist < 3.8 && targetItem && !isModalOpen) {
+        promptElem.classList.remove('opacity-0');
+        crosshair.classList.add('active');
+      } else {
+        promptElem.classList.add('opacity-0');
+        crosshair.classList.remove('active');
+      }
+
+      for (let i = sparkleBurstDebris.length - 1; i >= 0; i--) {
+        const sp = sparkleBurstDebris[i];
+        sp.vel.y -= 14 * delta;
+        sp.mesh.position.addScaledVector(sp.vel, delta);
+        sp.mesh.rotation.x += delta * 6;
+        sp.life -= delta * 0.7;
+
+        if (sp.life <= 0) {
+          scene.remove(sp.mesh);
+          sp.mesh.geometry.dispose();
+          sparkleBurstDebris.splice(i, 1);
+        }
+      }
+
+      // Confetti physics updates
+      for (let c = confettiParticles.length - 1; c >= 0; c--) {
+        const cp = confettiParticles[c];
+        cp.vel.y -= 13 * delta;
+        cp.mesh.position.addScaledVector(cp.vel, delta);
+        cp.mesh.rotation.x += cp.rotVel.x * delta;
+        cp.mesh.rotation.y += cp.rotVel.y * delta;
+        cp.life -= delta * 0.65;
+
+        if (cp.life <= 0) {
+          scene.remove(cp.mesh);
+          cp.mesh.geometry.dispose();
+          confettiParticles.splice(c, 1);
+        }
+      }
+
+      const pArr = petalGeo.attributes.position.array;
+      for (let p = 0; p < petalCount; p++) {
+        pArr[p * 3] += petalVelocities[p].x * delta;
+        pArr[p * 3 + 1] += petalVelocities[p].y * delta;
+        pArr[p * 3 + 2] += petalVelocities[p].z * delta;
+
+        if (pArr[p * 3 + 1] < 0.2) {
+          pArr[p * 3 + 1] = 12 + Math.random() * 4;
+          pArr[p * 3] = (Math.random() - 0.5) * 60;
+          pArr[p * 3 + 2] = (Math.random() - 0.5) * 60;
+        }
+      }
+      petalGeo.attributes.position.needsUpdate = true;
+
+      centralHeart.rotation.y += delta * 0.5;
+      orbitRing.rotation.z += delta * 0.3;
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    window.onload = function () {
+      function renderLoop() {
+        requestAnimationFrame(renderLoop);
+        const dt = Math.min(clock.getDelta(), 0.08);
+        updateSimulation(dt);
+        if (!isStandardViewOpen) {
+          renderer.render(scene, camera);
+        }
+      }
+      renderLoop();
+    };
+  </script>
+</body>
+</html>
